@@ -21,6 +21,9 @@ main (void) {
   std::cerr << "msg2->GetTypeName() : " << msg2->GetTypeName() << std::endl;
   dynamic_cast<tutorial::Person*>(msg2);
   
+  const tutorial::TutorialOptions options = person.GetDescriptor()->options().GetExtension(tutorial::tutorial_options);
+  std::cerr << "person.GetDescriptor()-> : " << options.DebugString() << std::endl;
+
   //  google::protobuf::util::FieldMaskUtil::GetFieldDescriptors(tutorial::Person::descriptor(), "PhoneNumber", &field_descriptors);
   // MessageDifferencer md;
   // md.CompareWithFields(msg1, msg2, field_descriptors, field_discriptors);
