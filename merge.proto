@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package sandbox;
+
+message MergeMessage {
+  string string_field_from_a = 1;
+  string string_field_from_b = 2;
+  int32 int32_field_from_a = 3;
+  int32 int32_field_from_b = 4;
+
+  repeated MessageField message_field = 5;
+
+  message MessageField {
+    string from_a = 1;
+    string from_b = 2;
+  }
+}
