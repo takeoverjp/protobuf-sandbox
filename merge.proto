@@ -8,7 +8,8 @@ message MergeMessage {
   int32 int32_field_from_a = 3;
   int32 int32_field_from_b = 4;
 
-  repeated MessageField message_field = 5;
+  MessageField message_field = 5;
+  repeated MessageField repeated_message_field = 6;
 
   message MessageField {
     string from_a = 1;
