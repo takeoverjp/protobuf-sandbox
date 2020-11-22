@@ -32,9 +32,31 @@ static void MergeSimply() {
   sandbox::MergeMessage message_a;
   message_a.set_int32_field_from_a(1);
   message_a.set_string_field_from_a("From message_a");
+  message_a.mutable_message_field()->set_from_a("From message_a");
+  message_a.set_bool_field_from_a(false);
   Dump("message_a", message_a);
 
   sandbox::MergeMessage message_b;
+  message_b.set_int32_field_from_a(2);
+  message_b.set_int32_field_from_b(2);
+  message_b.set_string_field_from_a("From message_b");
+  message_b.set_string_field_from_b("From message_b");
+  message_b.set_bool_field_from_a(true);
+  message_b.mutable_message_field()->set_from_b("From message_b");
+  Dump("message_b", message_b);
+
+  message_b.MergeFrom(message_a);
+  Dump("message_b (after merge)", message_b);
+}
+
+static void MergeWithFieldMask() {
+  sandbox::MergeMessage message_a;
+  message_a.set_int32_field_from_a(0);
+  message_a.set_string_field_from_a("From message_a");
+  Dump("message_a", message_a);
+
+  sandbox::MergeMessage message_b;
+  message_b.set_int32_field_from_a(2);
   message_b.set_int32_field_from_b(2);
   message_b.set_string_field_from_b("From message_b");
   Dump("message_b", message_b);
@@ -42,6 +64,7 @@ static void MergeSimply() {
   FieldMask mask;
   mask.add_paths("int32_field_from_a");
   mask.add_paths("string_field_from_a");
+  std::cout << "mask : " << FieldMaskUtil::ToString(mask) << std::endl;
   Dump(mask);
 
   FieldMaskUtil::MergeOptions merge_options;
@@ -74,22 +97,19 @@ static void MergeWithReplaceMessageFieldsOption(bool replace_message_fields) {
 
 static void MergeWithReplaceRepeatedFieldsOption(bool replace_repeated_fields) {
   sandbox::MergeMessage message_a;
-  sandbox::MergeMessage::MessageField* field =
-      message_a.add_repeated_message_field();
-  field->set_from_a("From message_a 0");
-  field = message_a.add_repeated_message_field();
-  field->set_from_a("From message_a 1");
+  message_a.add_repeated_int32_field(1);
+  message_a.add_repeated_int32_field(2);
+  message_a.add_repeated_int32_field(3);
   Dump("message_a", message_a);
 
   sandbox::MergeMessage message_b;
-  field = message_b.add_repeated_message_field();
-  field->set_from_b("From message_b 0");
-  field = message_b.add_repeated_message_field();
-  field->set_from_b("From message_b 1");
+  message_b.add_repeated_int32_field(4);
+  message_b.add_repeated_int32_field(5);
+  message_b.add_repeated_int32_field(6);
   Dump("message_b", message_b);
 
   FieldMask mask;
-  mask.add_paths("repeated_message_field");
+  mask.add_paths("repeated_int32_field");
   // Dump(mask);
 
   FieldMaskUtil::MergeOptions merge_options;
@@ -141,7 +161,9 @@ int main(int argc, char* argv[]) {
     mode = argv[1];
   }
 
-  if (mode == "option_field") {
+  if (mode == "field_mask") {
+    MergeWithFieldMask();
+  } else if (mode == "option_field") {
     MergeWithReplaceMessageFieldsOption(false);
     MergeWithReplaceMessageFieldsOption(true);
   } else if (mode == "option_repeated") {
