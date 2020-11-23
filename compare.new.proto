@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package sandbox;
+
+message CompareMessage {
+  reserved 1;
+  reserved "old_field";
+  // int32 old_field = 1;
+  int32 new_field = 2;
+}

@@ -4,3 +4,6 @@
 /merge
 *~
 /merge_qiita
+/compare
+/store_old
+/*.data.*
