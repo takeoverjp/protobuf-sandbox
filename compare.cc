@@ -11,6 +11,7 @@
 using google::protobuf::FieldDescriptor;
 using google::protobuf::FieldMask;
 using google::protobuf::Message;
+using google::protobuf::util::FieldDescriptorArray;
 using google::protobuf::util::FieldMaskUtil;
 using google::protobuf::util::MessageDifferencer;
 using std::ios;
@@ -95,7 +96,7 @@ int main() {
 
   FieldMask mask;
   mask.add_paths("survived_field");
-  std::vector<const FieldDescriptor*> fields;
+  FieldDescriptorArray fields;
   assert(
       FieldMaskUtil::GetFieldDescriptors(sandbox::CompareMessage::descriptor(),
                                          FieldMaskUtil::ToString(mask), &fields));
