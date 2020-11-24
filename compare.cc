@@ -35,45 +35,84 @@ static void LoadMessage(const std::string& name,
 }
 
 static void InitializeMessageA(sandbox::CompareMessage* message) {
-  message->set_new_field(3);
+  message->set_survived_field(3);
 
-  Dump("message_a", *message);
+  Dump("message_1", *message);
 }
 
 static void InitializeMessageB(sandbox::CompareMessage* message) {
+  message->set_survived_field(3);
   message->set_new_field(4);
 
-  Dump("message_b", *message);
+  Dump("message_2", *message);
 }
 
-static void Compare() {
-  sandbox::CompareMessage message_a;
-  InitializeMessageA(&message_a);
-  sandbox::CompareMessage message_b;
-  InitializeMessageB(&message_b);
+int main() {
+  sandbox::CompareMessage message_1;
+  InitializeMessageA(&message_1);
+  sandbox::CompareMessage message_2;
+  InitializeMessageB(&message_2);
   sandbox::CompareMessage message_old_1;
   LoadMessage("compare.old.data.1", &message_old_1);
   sandbox::CompareMessage message_old_2;
   LoadMessage("compare.old.data.2", &message_old_2);
 
-  assert(MessageDifferencer::Equals(message_a, message_b) == false);
-  assert(MessageDifferencer::Equals(message_a, message_old_1) == false);
-  assert(MessageDifferencer::Equals(message_a, message_old_2) == false);
+  assert(MessageDifferencer::Equals(message_1, message_2) == false);
+#if GOOGLE_PROTOBUF_VERSION > 3005000
+  assert(MessageDifferencer::Equals(message_1, message_old_1) == false);
+  assert(MessageDifferencer::Equals(message_1, message_old_2) == false);
   assert(MessageDifferencer::Equals(message_old_1, message_old_2) == false);
+#else
+  assert(MessageDifferencer::Equals(message_1, message_old_1) == true);
+  assert(MessageDifferencer::Equals(message_1, message_old_2) == true);
+  assert(MessageDifferencer::Equals(message_old_1, message_old_2) == true);
+#endif
 
-  assert(MessageDifferencer::Equivalent(message_a, message_b) == false);
-  assert(MessageDifferencer::Equivalent(message_a, message_old_1) == true);
-  assert(MessageDifferencer::Equivalent(message_a, message_old_2) == true);
+  assert(MessageDifferencer::Equivalent(message_1, message_2) == false);
+  assert(MessageDifferencer::Equivalent(message_1, message_old_1) == true);
+  assert(MessageDifferencer::Equivalent(message_1, message_old_2) == true);
   assert(MessageDifferencer::Equivalent(message_old_1, message_old_2) == true);
 
   MessageDifferencer diff;
-  assert(diff.Compare(message_a, message_b) == false);
-  assert(diff.Compare(message_a, message_old_1) == false);
-  assert(diff.Compare(message_a, message_old_2) == false);
+  assert(diff.Compare(message_1, message_2) == false);
+#if GOOGLE_PROTOBUF_VERSION > 3005000
+  assert(diff.Compare(message_1, message_old_1) == false);
+  assert(diff.Compare(message_1, message_old_2) == false);
   assert(diff.Compare(message_old_1, message_old_2) == false);
-}
+#else
+  assert(diff.Compare(message_1, message_old_1) == true);
+  assert(diff.Compare(message_1, message_old_2) == true);
+  assert(diff.Compare(message_old_1, message_old_2) == true);
+#endif
 
-int main() {
-  Compare();
+  diff.set_message_field_comparison(
+      MessageDifferencer::MessageFieldComparison::EQUIVALENT);
+  assert(diff.Compare(message_1, message_2) == false);
+  assert(diff.Compare(message_1, message_old_1) == true);
+  assert(diff.Compare(message_1, message_old_2) == true);
+  assert(diff.Compare(message_old_1, message_old_2) == true);
+
+  FieldMask mask;
+  mask.add_paths("survived_field");
+  FieldMaskUtil::TrimMessage(mask, &message_1);
+  FieldMaskUtil::TrimMessage(mask, &message_2);
+  FieldMaskUtil::TrimMessage(mask, &message_old_1);
+  FieldMaskUtil::TrimMessage(mask, &message_old_2);
+
+  assert(MessageDifferencer::Equals(message_1, message_2) == true);
+#if GOOGLE_PROTOBUF_VERSION > 3005000
+  assert(MessageDifferencer::Equals(message_1, message_old_1) == false);
+  assert(MessageDifferencer::Equals(message_1, message_old_2) == false);
+  assert(MessageDifferencer::Equals(message_old_1, message_old_2) == false);
+#else
+  assert(MessageDifferencer::Equals(message_1, message_old_1) == true);
+  assert(MessageDifferencer::Equals(message_1, message_old_2) == true);
+  assert(MessageDifferencer::Equals(message_old_1, message_old_2) == true);
+#endif
+
+  assert(MessageDifferencer::Equivalent(message_1, message_2) == true);
+  assert(MessageDifferencer::Equivalent(message_1, message_old_1) == true);
+  assert(MessageDifferencer::Equivalent(message_1, message_old_2) == true);
+  assert(MessageDifferencer::Equivalent(message_old_1, message_old_2) == true);
   return 0;
 }

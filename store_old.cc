@@ -17,7 +17,7 @@ static void StoreMessage(const std::string& name, const Message& message) {
 static void Store(const std::string& name, int old_field, int new_field) {
   sandbox::CompareMessage message;
   message.set_old_field(old_field);
-  message.set_new_field(new_field);
+  message.set_survived_field(new_field);
   StoreMessage(name, message);
 }
 
