@@ -8,6 +8,7 @@
 
 #include "compare.new.pb.h"
 
+using google::protobuf::FieldDescriptor;
 using google::protobuf::FieldMask;
 using google::protobuf::Message;
 using google::protobuf::util::FieldMaskUtil;
@@ -94,6 +95,25 @@ int main() {
 
   FieldMask mask;
   mask.add_paths("survived_field");
+  std::vector<const FieldDescriptor*> fields;
+  assert(
+      FieldMaskUtil::GetFieldDescriptors(sandbox::CompareMessage::descriptor(),
+                                         FieldMaskUtil::ToString(mask), &fields));
+
+  diff.set_message_field_comparison(
+      MessageDifferencer::MessageFieldComparison::EQUAL);
+  assert(diff.CompareWithFields(message_1, message_2, fields, fields) == true);
+  assert(diff.CompareWithFields(message_1, message_old_1, fields, fields) == true);
+  assert(diff.CompareWithFields(message_1, message_old_2, fields, fields) == true);
+  assert(diff.CompareWithFields(message_old_1, message_old_2, fields, fields) == true);
+
+  diff.set_message_field_comparison(
+      MessageDifferencer::MessageFieldComparison::EQUIVALENT);
+  assert(diff.CompareWithFields(message_1, message_2, fields, fields) == true);
+  assert(diff.CompareWithFields(message_1, message_old_1, fields, fields) == true);
+  assert(diff.CompareWithFields(message_1, message_old_2, fields, fields) == true);
+  assert(diff.CompareWithFields(message_old_1, message_old_2, fields, fields) == true);
+
   FieldMaskUtil::TrimMessage(mask, &message_1);
   FieldMaskUtil::TrimMessage(mask, &message_2);
   FieldMaskUtil::TrimMessage(mask, &message_old_1);
