@@ -1,5 +1,5 @@
 .PHONY: all clean
-BIN:=person merge merge_qiita compare dynamic_message
+BIN:=person merge merge_qiita compare load_message
 all: $(BIN)
 clean:
 	rm -f $(BIN) *.pb.h *.pb.cc compare.old.data* *~
@@ -37,7 +37,7 @@ compare.old.data.2: store_old
 compare: compare.new.pb.cc compare.cc
 	g++ -o $@ $^ $(CFLAGS)
 
-dynamic_message: sample.pb.cc dynamic_message.cc
+load_message: sample.pb.cc load_message.cc
 	g++ -o $@ $^ $(CFLAGS)
 
 .PHONY: run-compare
