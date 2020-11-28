@@ -7,3 +7,7 @@
 /compare
 /store_old
 /*.data.*
+/dynamic_message
+GPATH
+GRTAGS
+GTAGS
