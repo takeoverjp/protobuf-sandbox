@@ -15,7 +15,8 @@ using ::google::protobuf::Message;
 using ::google::protobuf::util::MessageDifferencer;
 using ::sandbox::SampleMessage;
 
-const std::string kMessageFile = "message.data";
+static std::string serialized_message;
+static const int kTestCount = 1000000;
 
 static void StoreMessage(const std::string& name, const Message& message) {}
 
@@ -34,16 +35,10 @@ static void InitializeSampleMessage(SampleMessage* message) {
 static void SetUp() {
   sandbox::SampleMessage message;
   InitializeSampleMessage(&message);
-
-  {
-    std::ofstream output(kMessageFile, std::ios::trunc | std::ios::binary);
-    if (!message.SerializeToOstream(&output)) {
-      std::cerr << "Failed to write message." << std::endl;
-    }
-  }
+  serialized_message = message.SerializeAsString();
 }
 
-static void TearDown() { unlink(kMessageFile.c_str()); }
+static void TearDown() {}
 
 static void CheckSampleMessage(const SampleMessage& message) {
   // std::cout << message.DebugString() << std::endl;
@@ -53,8 +48,7 @@ static void CheckSampleMessage(const SampleMessage& message) {
 }
 
 static std::unique_ptr<Message> LoadMessageBasedOnDescriptor(
-    DynamicMessageFactory* factory, const std::string file_name,
-    const Descriptor* descriptor) {
+    DynamicMessageFactory* factory, const Descriptor* descriptor) {
   if ((factory == nullptr) || (descriptor == nullptr)) {
     return nullptr;
   }
@@ -73,16 +67,13 @@ static std::unique_ptr<Message> LoadMessageBasedOnDescriptor(
   }
 
   // 3. Message::ParseFromXXXで、Messageをdeserialize
-  {
-    std::ifstream input(file_name, std::ios::binary);
-    message->ParseFromIstream(&input);
-  }
+  message->ParseFromString(serialized_message);
 
   return message;
 }
 
 static std::unique_ptr<Message> LoadMessageBasedOnMessage(
-    const std::string file_name, const Message& instance) {
+    const Message& instance) {
   // 1. Message::Newで、mutableなMessageを取得
   //    得たMessageは呼び出し元が解放しなければならないので、unique_ptrで受ける
   auto message = std::unique_ptr<Message>(instance.New());
@@ -91,10 +82,7 @@ static std::unique_ptr<Message> LoadMessageBasedOnMessage(
   }
 
   // 2. Message::ParseFromXXXで、Messageをdeserialize
-  {
-    std::ifstream input(file_name, std::ios::binary);
-    message->ParseFromIstream(&input);
-  }
+  message->ParseFromString(serialized_message);
 
   return message;
 }
@@ -102,12 +90,22 @@ static std::unique_ptr<Message> LoadMessageBasedOnMessage(
 static void TestLoadMessageBasedOnMessage() {
   SetUp();
 
-  std::unique_ptr<Message> message = LoadMessageBasedOnMessage(
-        kMessageFile, SampleMessage::default_instance());
+  clock_t start = clock();
 
-  // 4. 具体的なMessage型にキャスト
-  SampleMessage* sample_message = DynamicCastToGenerated<SampleMessage>(message.get());
-  CheckSampleMessage(*sample_message);
+  for (int i = 0; i < kTestCount; i++) {
+    std::unique_ptr<Message> message =
+        LoadMessageBasedOnMessage(SampleMessage::default_instance());
+
+    // 4. 具体的なMessage型にキャスト
+    SampleMessage* sample_message =
+        DynamicCastToGenerated<SampleMessage>(message.get());
+    CheckSampleMessage(*sample_message);
+  }
+
+  clock_t end = clock();
+
+  std::cout << __func__ << " : " << (end - start) / (kTestCount / 1000) << " / "
+            << (CLOCKS_PER_SEC * 1000) << "[sec]" << std::endl;
 
   TearDown();
 }
@@ -115,24 +113,33 @@ static void TestLoadMessageBasedOnMessage() {
 static void TestLoadMessageBasedOnDescriptor() {
   SetUp();
 
-  SampleMessage sample_message;
+  clock_t start = clock();
 
-  {
-    // 0. DynamicMessageFactoryを生成
-    DynamicMessageFactory factory;
+  for (int i = 0; i < kTestCount; i++) {
+    SampleMessage sample_message;
 
-    std::unique_ptr<Message> message = LoadMessageBasedOnDescriptor(
-        &factory, kMessageFile, SampleMessage::descriptor());
+    {
+      // 0. DynamicMessageFactoryを生成
+      DynamicMessageFactory factory;
 
-    // 4. 具体的なMessage型にコピー
-    sample_message.CopyFrom(*message);
+      std::unique_ptr<Message> message =
+          LoadMessageBasedOnDescriptor(&factory, SampleMessage::descriptor());
 
-    // 5. ここでDynamicMessageFactory解放
-    //    以降、factoryから生成したmessageは参照してはいけない
-    //    sample_messageは引き続き使用できる
+      // 4. 具体的なMessage型にコピー
+      sample_message.CopyFrom(*message);
+
+      // 5. ここでDynamicMessageFactory解放
+      //    以降、factoryから生成したmessageは参照してはいけない
+      //    sample_messageは引き続き使用できる
+    }
+
+    CheckSampleMessage(sample_message);
   }
 
-  CheckSampleMessage(sample_message);
+  clock_t end = clock();
+
+  std::cout << __func__ << " : " << (end - start) / (kTestCount / 1000) << " / "
+            << (CLOCKS_PER_SEC * 1000) << "[sec]" << std::endl;
 
   TearDown();
 }
