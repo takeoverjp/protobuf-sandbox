@@ -59,7 +59,7 @@ static std::unique_ptr<Message> LoadMessageBasedOnDescriptor(
     return nullptr;
   }
 
-  // 2. Message::Newで、mutableなMessageを取得
+  // 2. Message::Newで、mutableなMessageを生成する
   //    得たMessageは呼び出し元が解放しなければならないので、unique_ptrで受ける
   auto message = std::unique_ptr<Message>(prototype->New());
   if (message == nullptr) {
@@ -73,18 +73,18 @@ static std::unique_ptr<Message> LoadMessageBasedOnDescriptor(
 }
 
 static std::unique_ptr<Message> LoadMessageBasedOnMessage(
-    const Message& instance) {
-  // 1. Message::Newで、mutableなMessageを取得
+    const Message& message) {
+  // 1. Message::Newで、mutableなMessageを生成する
   //    得たMessageは呼び出し元が解放しなければならないので、unique_ptrで受ける
-  auto message = std::unique_ptr<Message>(instance.New());
-  if (message == nullptr) {
+  auto new_message = std::unique_ptr<Message>(message.New());
+  if (new_message == nullptr) {
     return nullptr;
   }
 
   // 2. Message::ParseFromXXXで、Messageをdeserialize
-  message->ParseFromString(serialized_message);
+  new_message->ParseFromString(serialized_message);
 
-  return message;
+  return new_message;
 }
 
 static void TestLoadMessageBasedOnMessage() {
@@ -96,7 +96,7 @@ static void TestLoadMessageBasedOnMessage() {
     std::unique_ptr<Message> message =
         LoadMessageBasedOnMessage(SampleMessage::default_instance());
 
-    // 4. 具体的なMessage型にキャスト
+    // 3. ユーザ定義Message型にdown cast
     SampleMessage* sample_message =
         DynamicCastToGenerated<SampleMessage>(message.get());
     CheckSampleMessage(*sample_message);
@@ -125,7 +125,7 @@ static void TestLoadMessageBasedOnDescriptor() {
       std::unique_ptr<Message> message =
           LoadMessageBasedOnDescriptor(&factory, SampleMessage::descriptor());
 
-      // 4. 具体的なMessage型にコピー
+      // 4. ユーザ定義Message型にコピー
       sample_message.CopyFrom(*message);
 
       // 5. ここでDynamicMessageFactory解放
